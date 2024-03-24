@@ -1,4 +1,5 @@
-﻿using MagicVilla_VillaAPI.Models;
+﻿using MagicVilla_VillaAPI.Data;
+using MagicVilla_VillaAPI.Models;
 using MagicVilla_VillaAPI.Models.Dto;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,13 +11,47 @@ namespace MagicVilla_VillaAPI.Controllers
     public class VillaAPIController:ControllerBase
     {
         [HttpGet]
-        public IEnumerable<VillaDTO> GetVillas()
+        public ActionResult<IEnumerable<VillaDTO>> GetVillas()
         {
-            return new List<VillaDTO>
+            return Ok (VillaStore.villaList);
+        }
+        [HttpGet("{id:int}")]
+        //[ProducesResponseType(200,Type =typeof(VillaDTO))]
+        //[ProducesResponseType(404)]
+        //[ProducesResponseType(400)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<VillaDTO> GetVilla(int id)
+        {
+            if(id == 0)
             {
-                new VillaDTO{Id=0,Name="Pool View"},
-                new VillaDTO{Id=1,Name="Beach View"}
-            };
+                return BadRequest();
+            }
+            var villa = VillaStore.villaList.FirstOrDefault(x=>x.Id == id);
+            if (villa == null)
+            {
+                return NotFound();
+            }
+            return Ok(villa);
+        }
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<VillaDTO> CreateVilla([FromBody]VillaDTO villaDto)
+        {
+            if(villaDto == null)
+            {
+                return BadRequest(villaDto);
+            }
+            if(villaDto.Id > 0)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+            villaDto.Id = VillaStore.villaList.OrderByDescending(x => x.Id).FirstOrDefault().Id + 1;
+            VillaStore.villaList.Add(villaDto);
+            return Ok(villaDto);
         }
     }
 }
